@@ -1,20 +1,23 @@
 # Use official PHP image with Apache
 FROM php:8.2-apache
 
-# Install system dependencies (only what's needed)
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
     default-mysql-client \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+        mysqli \
+        pdo_mysql \
+        gd \
+        zip \
+        exif \
+        opcache \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-# Enable required PHP extensions (already compiled in the base image)
-RUN docker-php-ext-enable \
-    mysqli \
-    pdo_mysql \
-    gd \
-    zip \
-    exif \
-    opcache
 
 # Enable Apache rewrite module
 RUN a2enmod rewrite
