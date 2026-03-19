@@ -99,12 +99,14 @@ Containeriser l'application avec Docker pour :
 FROM php:8.2-apache
 ```
 
-**Extensions PHP installées :**
+**Extensions PHP activées** (pré-compilées dans l'image de base) :
 - `mysqli` & `pdo_mysql` → connexion MySQL
 - `gd` → traitement d'images (si besoin futur)
 - `zip` → gestion des archives
 - `exif` → métadonnées images
 - `opcache` → performance (cache d'opcodes)
+
+**Optimisation majeure** : Les extensions sont activées via `docker-php-ext-enable` (instantané) au lieu d'être compilées, ce qui réduit le temps de build de ~13 min à ~2-3 min.
 
 **Configuration Apache :**
 - Module `rewrite` activé (URL rewriting)
