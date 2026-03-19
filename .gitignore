@@ -1,0 +1,33 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# PHP / Composer
+vendor/
+composer.phar
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Local override config (optionnel)
+client/config.local.php
+
+# Temp / cache
+tmp/
+temp/
+cache/
+*.cache
+
+# Archives
+*.zip
+*.tar
+*.gz
+
