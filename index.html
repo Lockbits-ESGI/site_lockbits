@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LockBits - Secure Hosting & Cybersecurity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color .2s ease;
+        }
+
+        .nav-link::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -6px;
+            height: 2px;
+            width: 100%;
+            background: rgb(110 231 183);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform .25s ease;
+        }
+
+        .nav-link:hover::after,
+        .nav-link.is-active::after {
+            transform: scaleX(1);
+        }
+
+        .nav-link.is-active {
+            color: rgb(110 231 183);
+        }
+
+        .lift-hover {
+            transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+        }
+
+        .lift-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.15);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity .7s ease, transform .7s ease;
+        }
+
+        .reveal.in-view {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero-glow {
+            background:
+                radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.25), transparent 35%),
+                radial-gradient(circle at 80% 30%, rgba(16, 185, 129, 0.2), transparent 30%),
+                radial-gradient(circle at 50% 90%, rgba(52, 211, 153, 0.15), transparent 45%);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal,
+            .lift-hover,
+            .nav-link,
+            .nav-link::after {
+                transition: none !important;
+            }
+
+            .reveal {
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+
+<body id="top" class="bg-slate-950 text-slate-100 selection:bg-emerald-400 selection:text-black">
+    <div class="hero-glow min-h-screen">
+        <header class="sticky top-0 z-30 border-b border-white/10 bg-black/30 backdrop-blur-xl">
+            <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
+                <a href="#top" class="inline-flex items-center">
+                    <img src="logo.png" alt="LockBits" class="h-16 w-auto md:h-20" />
+                </a>
+                <div class="hidden items-center gap-8 text-sm text-slate-300 md:flex">
+                    <a href="#hosting" data-nav class="nav-link hover:text-emerald-300">Hosting</a>
+                    <a href="#cybersecurity" data-nav class="nav-link hover:text-emerald-300">Cybersecurity</a>
+                    <a href="#infrastructure" data-nav class="nav-link hover:text-emerald-300">Infrastructure</a>
+                    <a href="#contact" data-nav class="nav-link hover:text-emerald-300">Contact</a>
+                </div>
+                <a href="client/login.php" class="lift-hover rounded-lg border border-emerald-400/40 px-4 py-2 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/10">
+                    Client Area
+                </a>
+            </nav>
+        </header>
+
+        <main>
+            <section id="hosting" class="mx-auto grid max-w-7xl scroll-mt-28 items-center gap-12 px-6 pb-20 pt-20 md:grid-cols-2 md:px-10 md:pt-24">
+                <div class="reveal" data-reveal>
+                    <span class="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-300">
+                        Security-first infrastructure
+                    </span>
+                    <h2 class="mt-6 text-4xl font-bold leading-tight text-white md:text-6xl">
+                        Secure Hosting &<br>Cyber Defense
+                    </h2>
+                    <p class="mt-6 max-w-xl text-lg text-slate-300">
+                        LockBits provides high availability hosting and advanced cybersecurity services
+                        to protect your infrastructure, applications and data.
+                    </p>
+                    <div class="mt-10 flex flex-wrap gap-4">
+                        <button class="lift-hover rounded-xl bg-emerald-500 px-8 py-3 font-semibold text-black shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400">
+                            Get Started
+                        </button>
+                        <button class="lift-hover rounded-xl border border-white/20 bg-white/5 px-8 py-3 font-semibold text-slate-100 transition hover:bg-white/10">
+                            Learn More
+                        </button>
+                    </div>
+                    <div class="mt-10 grid grid-cols-3 gap-4 text-center">
+                        <div class="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+                            <p class="text-2xl font-bold text-emerald-300">99.99%</p>
+                            <p class="text-xs text-slate-400">Uptime SLA</p>
+                        </div>
+                        <div class="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+                            <p class="text-2xl font-bold text-emerald-300">24/7</p>
+                            <p class="text-xs text-slate-400">SOC Monitoring</p>
+                        </div>
+                        <div class="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+                            <p class="text-2xl font-bold text-emerald-300">&lt; 5 min</p>
+                            <p class="text-xs text-slate-400">Response Time</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reveal rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl" data-reveal>
+                    <div class="rounded-xl border border-emerald-400/20 bg-slate-900/70 p-5">
+                        <div class="mb-4 flex items-center justify-between">
+                            <p class="text-sm font-semibold text-emerald-300">Threat Detection Overview</p>
+                            <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs text-emerald-300">Live</span>
+                        </div>
+                        <div class="space-y-3 text-sm text-slate-300">
+                            <div class="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
+                                <span>DDoS attempts blocked</span><span class="font-semibold text-emerald-300">1,248</span>
+                            </div>
+                            <div class="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
+                                <span>Critical vulnerabilities</span><span class="font-semibold text-amber-300">0 open</span>
+                            </div>
+                            <div class="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
+                                <span>Incidents resolved</span><span class="font-semibold text-emerald-300">100%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-xs text-slate-400">
+                        Simulated dashboard preview for visual presentation.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <section id="infrastructure" class="reveal border-y border-white/10 bg-slate-900/60 px-6 py-6 scroll-mt-24 md:px-10" data-reveal>
+        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-6 text-sm text-slate-400">
+            <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2">ISO 27001 Ready</span>
+            <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2">24/7 Human Support</span>
+            <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2">EU Data Compliance</span>
+            <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2">Zero Trust Architecture</span>
+        </div>
+    </section>
+
+    <section id="cybersecurity" class="mx-auto max-w-7xl scroll-mt-24 px-6 py-24 md:px-10">
+        <div class="mb-12 text-center">
+            <h3 class="text-3xl font-bold text-white md:text-4xl">Our Services</h3>
+            <p class="mx-auto mt-4 max-w-2xl text-slate-400">
+                End-to-end hosting and cybersecurity capabilities built for modern teams.
+            </p>
+        </div>
+        <div class="grid gap-8 md:grid-cols-3">
+            <article class="reveal lift-hover group rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-7 transition hover:-translate-y-1 hover:border-emerald-400/30" data-reveal>
+                <h4 class="mb-3 text-xl font-semibold text-emerald-300">High Availability Hosting</h4>
+                <p class="text-slate-400">
+                    Deploy your applications on highly available infrastructure designed for
+                    maximum uptime and performance.
+                </p>
+                <a href="#" class="mt-6 inline-block text-sm font-semibold text-emerald-300 transition group-hover:text-emerald-200">Explore hosting -></a>
+            </article>
+
+            <article class="reveal lift-hover group rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-7 transition hover:-translate-y-1 hover:border-emerald-400/30" data-reveal>
+                <h4 class="mb-3 text-xl font-semibold text-emerald-300">Cybersecurity Protection</h4>
+                <p class="text-slate-400">
+                    Advanced protection against cyber threats including monitoring, intrusion
+                    detection and vulnerability management.
+                </p>
+                <a href="#" class="mt-6 inline-block text-sm font-semibold text-emerald-300 transition group-hover:text-emerald-200">Explore security -></a>
+            </article>
+
+            <article class="reveal lift-hover group rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-7 transition hover:-translate-y-1 hover:border-emerald-400/30" data-reveal>
+                <h4 class="mb-3 text-xl font-semibold text-emerald-300">Cloud Infrastructure</h4>
+                <p class="text-slate-400">
+                    Secure and scalable cloud infrastructure tailored for modern applications
+                    and enterprise environments.
+                </p>
+                <a href="#" class="mt-6 inline-block text-sm font-semibold text-emerald-300 transition group-hover:text-emerald-200">Explore cloud -></a>
+            </article>
+        </div>
+    </section>
+
+    <section id="contact" class="mx-auto max-w-7xl scroll-mt-24 px-6 pb-24 md:px-10">
+        <div class="reveal rounded-3xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/20 to-slate-900 p-10 text-center md:p-14" data-reveal>
+            <h3 class="text-3xl font-bold text-white md:text-4xl">Protect your infrastructure today</h3>
+            <p class="mx-auto mt-4 max-w-2xl text-slate-200">
+                Start hosting securely with LockBits and keep your systems protected.
+            </p>
+            <div class="mt-8 flex flex-wrap justify-center gap-4">
+                <button class="lift-hover rounded-xl bg-emerald-400 px-10 py-4 font-semibold text-black transition hover:bg-emerald-300">
+                    Contact Us
+                </button>
+                <button class="lift-hover rounded-xl border border-white/30 bg-white/10 px-10 py-4 font-semibold text-white transition hover:bg-white/20">
+                    Book a Demo
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <footer class="border-t border-white/10 bg-slate-950 py-8 text-center text-sm text-slate-500">
+        <p>© 2026 LockBits. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const revealElements = document.querySelectorAll('[data-reveal]');
+        const navLinks = [...document.querySelectorAll('[data-nav]')];
+        const sectionMap = navLinks
+            .map((link) => ({ link, section: document.querySelector(link.getAttribute('href')) }))
+            .filter((item) => item.section);
+
+        const revealObserver = new IntersectionObserver(
+            (entries, observer) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+                    entry.target.classList.add('in-view');
+                    observer.unobserve(entry.target);
+                });
+            },
+            { threshold: 0.14 }
+        );
+
+        revealElements.forEach((el, index) => {
+            el.style.transitionDelay = `${Math.min(index * 70, 280)}ms`;
+            revealObserver.observe(el);
+        });
+
+        const setActiveLink = (activeId) => {
+            navLinks.forEach((link) => {
+                const target = link.getAttribute('href').slice(1);
+                link.classList.toggle('is-active', target === activeId);
+            });
+        };
+
+        const sectionObserver = new IntersectionObserver(
+            (entries) => {
+                const visible = entries
+                    .filter((entry) => entry.isIntersecting)
+                    .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+                if (visible[0]) setActiveLink(visible[0].target.id);
+            },
+            { rootMargin: '-45% 0px -45% 0px', threshold: [0.05, 0.2, 0.4, 0.6] }
+        );
+
+        sectionMap.forEach(({ section }) => sectionObserver.observe(section));
+        setActiveLink('hosting');
+    </script>
+</body>
+
+</html>
