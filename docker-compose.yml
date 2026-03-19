@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PHP + Apache application server
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lockbits_web
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    environment:
+      # Database connection
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-lockbits_client}
+      DB_USER: ${DB_USER:-lockbits}
+      DB_PASS: ${DB_PASS:-lockbits_password}
+      # Application settings
+      APP_NAME: ${APP_NAME:-LockBits Client Area}
+      APP_ENV: ${APP_ENV:-development}
+      # PHP settings
+      PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-256M}
+      PHP_UPLOAD_MAX_FILESIZE: ${PHP_UPLOAD_MAX_FILESIZE:-10M}
+      PHP_POST_MAX_SIZE: ${PHP_POST_MAX_SIZE:-10M}
+    volumes:
+      - ./:/var/www/html
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - lockbits_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MySQL database
+  db:
+    image: mysql:8.0
+    container_name: lockbits_db
+    ports:
+      - "${DB_EXPOSE_PORT:-3307}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-lockbits_client}
+      MYSQL_USER: ${DB_USER:-lockbits}
+      MYSQL_PASSWORD: ${DB_PASS:-lockbits_password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./client/database.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks:
+      - lockbits_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  lockbits_network:
+    driver: bridge
