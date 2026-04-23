@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/glpi_api.php';
 
 if (is_logged_in()) {
     redirect('/dashboard.php');
@@ -27,24 +28,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($password !== $confirmPassword) {
         $error = 'Passwords do not match.';
     } else {
+        if (!glpi_is_configured()) {
+            $error = 'Support system is not configured (GLPI). Please contact an administrator.';
+        } else {
         $check = db()->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
         $check->execute(['email' => $email]);
 
         if ($check->fetch()) {
             $error = 'This email is already used.';
         } else {
-            $insert = db()->prepare(
-                'INSERT INTO users (name, email, password_hash, created_at) VALUES (:name, :email, :password_hash, NOW())'
-            );
-            $insert->execute([
-                'name' => $name,
-                'email' => $email,
-                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-            ]);
+            $pdo = db();
 
-            $id = (int) db()->lastInsertId();
-            login_user(['id' => $id, 'name' => $name, 'email' => $email]);
-            redirect('/dashboard.php');
+            try {
+                $pdo->beginTransaction();
+
+                $insert = $pdo->prepare(
+                    'INSERT INTO users (name, email, password_hash, created_at) VALUES (:name, :email, :password_hash, NOW())'
+                );
+                $insert->execute([
+                    'name' => $name,
+                    'email' => $email,
+                    'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                ]);
+
+                $id = (int) $pdo->lastInsertId();
+
+                $glpiUserId = glpi_create_user($name, $email, $password);
+                $update = $pdo->prepare('UPDATE users SET glpi_user_id = :glpi_user_id WHERE id = :id');
+                $update->execute([
+                    'glpi_user_id' => $glpiUserId,
+                    'id' => $id,
+                ]);
+
+                $pdo->commit();
+
+                login_user(['id' => $id, 'name' => $name, 'email' => $email]);
+                redirect('/dashboard.php');
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                error_log('[register] ' . $e::class . ': ' . $e->getMessage());
+                $error = (defined('APP_ENV') && APP_ENV !== 'production')
+                    ? ('Unable to create your account: ' . $e->getMessage())
+                    : 'Unable to create your account right now. Please try again later.';
+            }
+        }
         }
     }
 }

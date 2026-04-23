@@ -9,19 +9,45 @@ CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
     email VARCHAR(180) NOT NULL UNIQUE,
+    glpi_user_id INT UNSIGNED NULL,
     password_hash VARCHAR(255) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_users_glpi_user_id (glpi_user_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS tickets (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NULL,
+    glpi_ticket_id INT UNSIGNED NULL,
     subject VARCHAR(180) NOT NULL,
     status ENUM('open', 'in_progress', 'closed') NOT NULL DEFAULT 'open',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_synced_at DATETIME NULL,
     CONSTRAINT fk_tickets_user
         FOREIGN KEY (user_id) REFERENCES users(id)
         ON DELETE SET NULL
+    ,
+    UNIQUE KEY uk_tickets_glpi_ticket_id (glpi_ticket_id),
+    KEY idx_tickets_user (user_id),
+    KEY idx_tickets_status (status),
+    KEY idx_tickets_created_at (created_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS ticket_messages (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    ticket_id INT UNSIGNED NOT NULL,
+    glpi_item_type ENUM('followup', 'solution', 'task') NULL,
+    glpi_item_id INT UNSIGNED NULL,
+    author_type ENUM('client', 'staff', 'system') NOT NULL DEFAULT 'client',
+    author_label VARCHAR(190) NULL,
+    body TEXT NOT NULL,
+    created_at DATETIME NOT NULL,
+    synced_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ticket_messages_ticket
+        FOREIGN KEY (ticket_id) REFERENCES tickets(id)
+        ON DELETE CASCADE,
+    UNIQUE KEY uk_ticket_messages_glpi_item (glpi_item_type, glpi_item_id),
+    KEY idx_ticket_messages_ticket_created (ticket_id, created_at)
 ) ENGINE=InnoDB;
 
 -- =========================================================
@@ -93,59 +119,7 @@ CREATE TABLE IF NOT EXISTS edr_report_processes (
     KEY idx_edr_processes_pid (pid)
 ) ENGINE=InnoDB;
 
--- Reseau: connexions actives, ports ouverts, adresses distantes
-CREATE TABLE IF NOT EXISTS edr_report_network (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    report_id BIGINT UNSIGNED NOT NULL,
-    protocol VARCHAR(20) NULL,
-    local_address VARCHAR(255) NULL,
-    local_port INT UNSIGNED NULL,
-    remote_address VARCHAR(255) NULL,
-    remote_port INT UNSIGNED NULL,
-    connection_state VARCHAR(50) NULL,
-    is_open_port TINYINT(1) NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_edr_network_report
-        FOREIGN KEY (report_id) REFERENCES edr_reports(id)
-        ON DELETE CASCADE,
-    KEY idx_edr_network_report (report_id),
-    KEY idx_edr_network_remote (remote_address)
-) ENGINE=InnoDB;
 
--- Fichiers suspects: nouveaux fichiers dans repertoires sensibles
-CREATE TABLE IF NOT EXISTS edr_report_suspicious_files (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    report_id BIGINT UNSIGNED NOT NULL,
-    file_path VARCHAR(1024) NOT NULL,
-    file_name VARCHAR(255) NULL,
-    file_hash_sha256 CHAR(64) NULL,
-    detection_reason VARCHAR(255) NULL,
-    is_new_file TINYINT(1) NOT NULL DEFAULT 1,
-    detected_at DATETIME NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_edr_files_report
-        FOREIGN KEY (report_id) REFERENCES edr_reports(id)
-        ON DELETE CASCADE,
-    KEY idx_edr_files_report (report_id),
-    KEY idx_edr_files_detected (detected_at)
-) ENGINE=InnoDB;
-
--- Utilisateurs: sessions actives, utilisateurs connectes
-CREATE TABLE IF NOT EXISTS edr_report_user_sessions (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    report_id BIGINT UNSIGNED NOT NULL,
-    username VARCHAR(190) NOT NULL,
-    session_id VARCHAR(190) NULL,
-    source_ip VARCHAR(45) NULL,
-    is_active TINYINT(1) NOT NULL DEFAULT 1,
-    login_time DATETIME NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_edr_sessions_report
-        FOREIGN KEY (report_id) REFERENCES edr_reports(id)
-        ON DELETE CASCADE,
-    KEY idx_edr_sessions_report (report_id),
-    KEY idx_edr_sessions_user (username)
-) ENGINE=InnoDB;
 
 -- Systeme: OS, version kernel, uptime, hostname
 CREATE TABLE IF NOT EXISTS edr_report_system (

@@ -10,6 +10,11 @@ $user = current_user();
 $ticketCount = 0;
 $setupWarning = '';
 
+start_secure_session();
+$flashSuccess = (string) ($_SESSION['flash_success'] ?? '');
+$flashTicketUrl = (string) ($_SESSION['flash_ticket_url'] ?? '');
+unset($_SESSION['flash_success'], $_SESSION['flash_ticket_url']);
+
 try {
     $ticketCount = (int) db()->query('SELECT COUNT(*) FROM tickets')->fetchColumn();
 } catch (PDOException $e) {
@@ -33,13 +38,25 @@ try {
                 <h1 class="text-xl font-semibold text-emerald-300"><?= htmlspecialchars((string) ($user['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
             </div>
             <div class="flex items-center gap-3">
-                <a href="/lockbits/index.html" class="rounded-lg border border-white/20 px-4 py-2 text-sm hover:bg-white/10">Website</a>
+                <a href="/site_lockbits/index.html" class="rounded-lg border border-white/20 px-4 py-2 text-sm hover:bg-white/10">Website</a>
                 <a href="<?= APP_BASE_PATH ?>/logout.php" class="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-300">Logout</a>
             </div>
         </div>
     </header>
 
     <main class="mx-auto max-w-7xl px-6 py-8">
+        <?php if ($flashSuccess !== ''): ?>
+            <div class="mb-6 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <span><?= htmlspecialchars($flashSuccess, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php if ($flashTicketUrl !== ''): ?>
+                        <a href="<?= htmlspecialchars($flashTicketUrl, ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-black hover:bg-emerald-300">
+                            Open in GLPI
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
         <?php if ($setupWarning !== ''): ?>
             <div class="mb-6 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
                 <?= htmlspecialchars($setupWarning, ENT_QUOTES, 'UTF-8') ?>
@@ -78,9 +95,12 @@ try {
             <article class="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
                 <h2 class="text-lg font-semibold text-white">Quick actions</h2>
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <button class="rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-400/20">
+                    <a href="<?= APP_BASE_PATH ?>/create_ticket.php" class="rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-4 py-3 text-center text-sm font-semibold text-emerald-300 hover:bg-emerald-400/20">
                         Create support ticket
-                    </button>
+                    </a>
+                    <a href="<?= APP_BASE_PATH ?>/tickets.php" class="rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-slate-100 hover:bg-white/10">
+                        View my tickets
+                    </a>
                     <button class="rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-white/10">
                         Download invoice
                     </button>

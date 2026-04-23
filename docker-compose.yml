@@ -19,6 +19,15 @@ services:
       # Application settings
       APP_NAME: ${APP_NAME:-LockBits Client Area}
       APP_ENV: ${APP_ENV:-development}
+      # GLPI integration (REST API + UI redirect)
+      GLPI_API_URL: ${GLPI_API_URL:-}
+      GLPI_WEB_URL: ${GLPI_WEB_URL:-}
+      GLPI_APP_TOKEN: ${GLPI_APP_TOKEN:-}
+      GLPI_USER_TOKEN: ${GLPI_USER_TOKEN:-}
+      GLPI_OAUTH_CLIENT_ID: ${GLPI_OAUTH_CLIENT_ID:-}
+      GLPI_OAUTH_CLIENT_SECRET: ${GLPI_OAUTH_CLIENT_SECRET:-}
+      GLPI_API_USERNAME: ${GLPI_API_USERNAME:-}
+      GLPI_API_PASSWORD: ${GLPI_API_PASSWORD:-}
       # PHP settings
       PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-256M}
       PHP_UPLOAD_MAX_FILESIZE: ${PHP_UPLOAD_MAX_FILESIZE:-10M}

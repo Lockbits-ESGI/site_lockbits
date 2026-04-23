@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-10">
         <div class="grid w-full gap-8 md:grid-cols-2">
             <section class="rounded-2xl border border-white/10 bg-white/5 p-8">
-                <a href="/lockbits/index.html" class="text-emerald-300 hover:text-emerald-200">← Back to website</a>
+                <a href="/site_lockbits/index.html" class="text-emerald-300 hover:text-emerald-200">← Back to website</a>
                 <h1 class="mt-6 text-3xl font-bold">Client Login</h1>
                 <p class="mt-2 text-slate-400">Access your private dashboard and support tools.</p>
                 <ul class="mt-8 space-y-3 text-sm text-slate-300">
