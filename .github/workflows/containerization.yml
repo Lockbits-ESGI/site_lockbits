@@ -13,9 +13,12 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+  permissions:
+    contents: read
+    packages: write
+    id-token: write
+    attestations: write
+    artifact-metadata: write
 
     steps:
       - name: Checkout repository
