@@ -3,11 +3,12 @@ FROM php:8.2-apache
 
 # Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
-    default-mysql-client \
-    libzip-dev \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
+default-mysql-client \
+libzip-dev \
+libpng-dev \
+libjpeg-dev \
+libfreetype6-dev \
+curl \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         mysqli \
