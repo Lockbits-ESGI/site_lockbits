@@ -304,15 +304,6 @@ unset($_SESSION['flash_success']);
             </div>
         <?php endif; ?>
 
-        <?php if (defined('APP_ENV') && APP_ENV !== 'production'): ?>
-            <details class="mb-6 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-200">
-                <summary class="cursor-pointer select-none text-slate-300">Debug sync GLPI</summary>
-                <pre class="mt-3 overflow-x-auto whitespace-pre-wrap text-slate-200"><?=
-                    htmlspecialchars(json_encode($syncDebug, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8')
-                ?></pre>
-            </details>
-        <?php endif; ?>
-
         <section class="rounded-2xl border border-white/10 bg-slate-900/60">
             <div class="border-b border-white/10 px-6 py-4">
                 <p class="text-sm text-slate-300">Conversation avec le support</p>
