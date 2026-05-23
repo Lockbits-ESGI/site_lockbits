@@ -33,7 +33,7 @@ function is_logged_in(): bool
 function require_login(): void
 {
     if (!is_logged_in()) {
-        redirect('/login.php');
+        redirect('/login');
     }
 }
 

@@ -6,7 +6,7 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/glpi_api.php';
 
 if (is_logged_in()) {
-    redirect('/dashboard.php');
+    redirect('/dashboard');
 }
 
 $error = '';
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->commit();
 
                 login_user(['id' => $id, 'name' => $name, 'email' => $email]);
-                redirect('/dashboard.php');
+                redirect('/dashboard');
             } catch (Throwable $e) {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="min-h-screen bg-slate-950 text-slate-100">
     <div class="mx-auto flex min-h-screen max-w-3xl items-center px-6 py-10">
         <section class="w-full rounded-2xl border border-emerald-400/20 bg-slate-900/70 p-8">
-            <a href="<?= APP_BASE_PATH ?>/login.php" class="text-emerald-300 hover:text-emerald-200">← Back to login</a>
+            <a href="<?= APP_BASE_PATH ?>/login" class="text-emerald-300 hover:text-emerald-200">← Back to login</a>
             <h1 class="mt-5 text-3xl font-bold">Create your client account</h1>
             <p class="mt-2 text-slate-400">This account gives access to your dashboard and support.</p>
 

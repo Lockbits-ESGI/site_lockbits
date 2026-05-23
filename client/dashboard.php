@@ -38,8 +38,8 @@ try {
                 <h1 class="text-xl font-semibold text-emerald-300"><?= htmlspecialchars((string) ($user['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
             </div>
             <div class="flex items-center gap-3">
-                <a href="/site_lockbits/index.html" class="rounded-lg border border-white/20 px-4 py-2 text-sm hover:bg-white/10">Website</a>
-                <a href="<?= APP_BASE_PATH ?>/logout.php" class="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-300">Logout</a>
+                <a href="../" class="rounded-lg border border-white/20 px-4 py-2 text-sm hover:bg-white/10">Website</a>
+                <a href="<?= APP_BASE_PATH ?>/logout" class="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-300">Logout</a>
             </div>
         </div>
     </header>
@@ -95,10 +95,10 @@ try {
             <article class="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
                 <h2 class="text-lg font-semibold text-white">Quick actions</h2>
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <a href="<?= APP_BASE_PATH ?>/create_ticket.php" class="rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-4 py-3 text-center text-sm font-semibold text-emerald-300 hover:bg-emerald-400/20">
+                    <a href="<?= APP_BASE_PATH ?>/create_ticket" class="rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-4 py-3 text-center text-sm font-semibold text-emerald-300 hover:bg-emerald-400/20">
                         Create support ticket
                     </a>
-                    <a href="<?= APP_BASE_PATH ?>/tickets.php" class="rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-slate-100 hover:bg-white/10">
+                    <a href="<?= APP_BASE_PATH ?>/tickets" class="rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-slate-100 hover:bg-white/10">
                         View my tickets
                     </a>
                     <button class="rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-white/10">

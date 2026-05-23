@@ -10,7 +10,7 @@ $user = current_user();
 
 $ticketId = (int) ($_GET['id'] ?? 0);
 if ($ticketId <= 0) {
-    redirect('/tickets.php');
+    redirect('/tickets');
 }
 
 $pdo = db();
@@ -24,7 +24,7 @@ try {
     $stmt->execute(['id' => $ticketId, 'uid' => (int) ($user['id'] ?? 0)]);
     $ticket = $stmt->fetch();
     if (!$ticket) {
-        redirect('/tickets.php');
+        redirect('/tickets');
     }
 
     $stmt = $pdo->prepare('SELECT glpi_user_id FROM users WHERE id = :id LIMIT 1');
@@ -76,7 +76,7 @@ if ($ticket && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
             start_secure_session();
             $_SESSION['flash_success'] = 'Message sent.';
-            redirect('/ticket.php?id=' . $ticketId);
+            redirect('/ticket?id=' . $ticketId);
         } catch (Throwable $e) {
             error_log('[ticket_reply] ' . $e::class . ': ' . $e->getMessage());
             $error = (defined('APP_ENV') && APP_ENV !== 'production')
@@ -117,7 +117,7 @@ if ($ticket) {
                     ]);
                     start_secure_session();
                     $_SESSION['flash_success'] = 'Ce ticket a été supprimé par le support.';
-                    redirect('/tickets.php');
+                    redirect('/tickets');
                 }
                 throw $e;
             }
@@ -285,8 +285,8 @@ unset($_SESSION['flash_success']);
                 <h1 class="text-xl font-semibold text-emerald-300"><?= htmlspecialchars((string) ($ticket['subject'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
             </div>
             <div class="flex items-center gap-3">
-                <a href="<?= APP_BASE_PATH ?>/tickets.php" class="rounded-lg border border-white/20 px-4 py-2 text-sm hover:bg-white/10">Mes tickets</a>
-                <a href="<?= APP_BASE_PATH ?>/create_ticket.php" class="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-300">Nouveau</a>
+                <a href="<?= APP_BASE_PATH ?>/tickets" class="rounded-lg border border-white/20 px-4 py-2 text-sm hover:bg-white/10">Mes tickets</a>
+                <a href="<?= APP_BASE_PATH ?>/create_ticket" class="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-300">Nouveau</a>
             </div>
         </div>
     </header>
