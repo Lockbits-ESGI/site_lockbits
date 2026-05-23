@@ -1,0 +1,13 @@
+RewriteEngine On
+
+# -----------------------------------------------------------
+# Clean URLs — masquer les extensions .php
+# -----------------------------------------------------------
+# Redirige /client/xxx.php -> /client/xxx (301, préserve query string)
+RewriteCond %{THE_REQUEST} \s/(client/[a-zA-Z_-]+)\.php[?\s] [NC]
+RewriteRule ^ /%1 [R=301,L,QSA]
+
+# Réécriture interne : /client/xxx -> /client/xxx.php
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^client/([a-zA-Z_-]+)$ client/$1.php [L]
