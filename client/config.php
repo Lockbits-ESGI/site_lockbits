@@ -39,7 +39,7 @@ define('DB_PASS', $dbPass);
 define('APP_NAME', getenv('APP_NAME') ?: 'LockBits Client Area');
 define('APP_ENV', getenv('APP_ENV') ?: 'development');
 // Base path of this client area in your web server (examples: "/client", "/site_lockbits/client", "").
-define('APP_BASE_PATH', rtrim((string) (getenv('APP_BASE_PATH') ?: '/site_lockbits/client'), '/'));
+define('APP_BASE_PATH', rtrim((string) (getenv('APP_BASE_PATH') ?: '/client'), '/'));
 
 // GLPI (REST API + UI redirect)
 // Example:
