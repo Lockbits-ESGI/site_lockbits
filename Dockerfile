@@ -43,5 +43,16 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost/ || exit 1
 
+# Enable rate limiting module
+RUN a2enmod ratelimit
+
+# Configure rate limiting (global limits: 200 req/min, burst 50)
+RUN echo '<Directory /var/www/html>\n\
+    SetOutputFilter RATE_LIMIT\n\
+    SetEnv rate-limit 200\n\
+    SetEnv rate-initial-burst 50\n\
+</Directory>' > /etc/apache2/conf-available/rate-limit.conf \
+    && a2enconf rate-limit
+
 # Start Apache in foreground
 CMD ["apache2-foreground"]
