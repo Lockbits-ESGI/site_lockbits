@@ -22,6 +22,10 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy and configure Docker entrypoint (auto-initializes DB schema on startup)
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Enable Apache rewrite module
 RUN a2enmod rewrite
 
@@ -53,6 +57,9 @@ RUN echo '<Directory /var/www/html>\n\
     SetEnv rate-initial-burst 50\n\
 </Directory>' > /etc/apache2/conf-available/rate-limit.conf \
     && a2enconf rate-limit
+
+# Use custom entrypoint that ensures DB schema exists before starting Apache
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 # Start Apache in foreground
 CMD ["apache2-foreground"]
