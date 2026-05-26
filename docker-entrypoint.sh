@@ -46,12 +46,15 @@ if [ ! -f "${SCHEMA_FILE}" ]; then
 fi
 
 # ── 3. Check if the core `users` table exists ──────────────────────────────
+# Note: --skip-ssl is needed because MySQL 8.0 enables TLS by default, but
+# the Debian default-mysql-client package ships MariaDB client which doesn't
+# support --ssl-mode=DISABLED. --skip-ssl works with both MySQL and MariaDB.
 TABLE_COUNT=$(mysql \
   -h "${DB_HOST}" \
   -P "${DB_PORT}" \
   -u "${DB_USER}" \
   -p"${DB_PASS}" \
-  ${MYSQL_SSL_ARGS} \
+  --skip-ssl \
   "${DB_NAME}" \
   -N \
   -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${DB_NAME}' AND table_name = 'users';" \
@@ -66,7 +69,7 @@ if [ "${TABLE_COUNT}" = "0" ]; then
     -P "${DB_PORT}" \
     -u "${DB_USER}" \
     -p"${DB_PASS}" \
-    ${MYSQL_SSL_ARGS} \
+    --skip-ssl \
     "${DB_NAME}" \
     < "${SCHEMA_FILE}"
   then
