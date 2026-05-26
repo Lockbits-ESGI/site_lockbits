@@ -20,6 +20,15 @@ DB_USER="${DB_USER:-lockbits}"
 DB_PASS="${DB_PASS:-}"
 SCHEMA_FILE="/var/www/html/client/database.sql"
 
+echo ">>> [entrypoint] Connecting to MySQL at ${DB_HOST}:${DB_PORT} as user '${DB_USER}', database '${DB_NAME}'..."
+
+# ── 0. Use MYSQL_PWD to avoid argument parsing edge cases ──────────────────
+# We use MYSQL_PWD instead of -p"${DB_PASS}" because:
+#   - When DB_PASS is empty, -p"" can cause MariaDB client to read password
+#     from stdin (the SQL file), which corrupts the import.
+#   - MYSQL_PWD is consistent across MySQL and MariaDB clients.
+export MYSQL_PWD="${DB_PASS}"
+
 # ── 1. Wait for MySQL (TCP port check) ────────────────────────────────────
 # Uses bash built-in /dev/tcp which works with both MySQL and MariaDB clients
 # and avoids SSL negotiation issues on the initial connectivity check.
@@ -45,20 +54,31 @@ if [ ! -f "${SCHEMA_FILE}" ]; then
   exec "$@"
 fi
 
-# ── 3. Check if the core `users` table exists ──────────────────────────────
-# Note: --skip-ssl is needed because MySQL 8.0 enables TLS by default, but
-# the Debian default-mysql-client package ships MariaDB client which doesn't
-# support --ssl-mode=DISABLED. --skip-ssl works with both MySQL and MariaDB.
+# ── 3. Test actual MySQL connection ────────────────────────────────────────
+echo ">>> [entrypoint] Testing MySQL connection..."
+if ! mysql \
+    -h "${DB_HOST}" \
+    -P "${DB_PORT}" \
+    -u "${DB_USER}" \
+    --skip-ssl \
+    -N \
+    -e "SELECT 1" > /dev/null 2>&1
+then
+  echo ">>> [entrypoint] ERROR: Can not connect to MySQL as user '${DB_USER}'. Check DB_USER and DB_PASS."
+  exit 1
+fi
+echo ">>> [entrypoint] MySQL connection OK."
+
+# ── 4. Check if the core `users` table exists ──────────────────────────────
+echo ">>> [entrypoint] Checking if schema already exists..."
 TABLE_COUNT=$(mysql \
   -h "${DB_HOST}" \
   -P "${DB_PORT}" \
   -u "${DB_USER}" \
-  -p"${DB_PASS}" \
   --skip-ssl \
-  "${DB_NAME}" \
   -N \
   -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${DB_NAME}' AND table_name = 'users';" \
-  2>/dev/null || echo "0")
+  2>&1 || true)
 
 TABLE_COUNT="${TABLE_COUNT//[!0-9]/}"
 
@@ -68,10 +88,9 @@ if [ "${TABLE_COUNT}" = "0" ]; then
     -h "${DB_HOST}" \
     -P "${DB_PORT}" \
     -u "${DB_USER}" \
-    -p"${DB_PASS}" \
     --skip-ssl \
     "${DB_NAME}" \
-    < "${SCHEMA_FILE}"
+    < "${SCHEMA_FILE}" 2>&1
   then
     echo ">>> [entrypoint] Database schema initialized successfully."
   else
@@ -82,5 +101,5 @@ else
   echo ">>> [entrypoint] Database schema already present."
 fi
 
-# ── 4. Hand over to the main process (Apache) ──────────────────────────────
+# ── 5. Hand over to the main process (Apache) ──────────────────────────────
 exec "$@"
