@@ -25,7 +25,7 @@ if (is_file($localOverridesPath)) {
 $dbHost = getenv('DB_HOST') ?: '127.0.0.1';
 $dbPort = getenv('DB_PORT') ?: '3306';
 $dbName = getenv('DB_NAME') ?: 'lockbits_client';
-$dbUser = getenv('DB_USER') ?: 'root';
+$dbUser = getenv('DB_USER') ?: 'lockbits';
 $dbPass = getenv('DB_PASS') ?: '';
 
 // Define constants for backward compatibility
