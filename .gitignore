@@ -31,3 +31,5 @@ cache/
 *.tar
 *.gz
 
+config.php
+usage_count.txt
