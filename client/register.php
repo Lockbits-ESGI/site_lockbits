@@ -29,7 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Passwords do not match.';
     } else {
         if (!glpi_is_configured()) {
-            $error = 'Support system is not configured (GLPI). Please contact an administrator.';
+            $error = (defined('APP_ENV') && APP_ENV !== 'production')
+                ? 'GLPI non configuré : copiez client/config.local.example.php vers client/config.local.php et renseignez GLPI_API_URL + tokens OAuth (ou API legacy). Test : /client/glpi_health.php'
+                : 'Support system is not configured (GLPI). Please contact an administrator.';
         } else {
         $check = db()->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
         $check->execute(['email' => $email]);

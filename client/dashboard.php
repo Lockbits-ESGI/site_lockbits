@@ -6,6 +6,7 @@ require_once __DIR__ . '/db.php';
 
 require_login();
 $user = current_user();
+$localUserId = (int) ($user['id'] ?? 0);
 
 $ticketCount = 0;
 $setupWarning = '';
@@ -16,7 +17,9 @@ $flashTicketUrl = (string) ($_SESSION['flash_ticket_url'] ?? '');
 unset($_SESSION['flash_success'], $_SESSION['flash_ticket_url']);
 
 try {
-    $ticketCount = (int) db()->query('SELECT COUNT(*) FROM tickets')->fetchColumn();
+    $stmt = db()->prepare('SELECT COUNT(*) FROM tickets WHERE user_id = :uid');
+    $stmt->execute(['uid' => $localUserId]);
+    $ticketCount = (int) $stmt->fetchColumn();
 } catch (PDOException $e) {
     // Keep dashboard accessible even if SQL import is incomplete.
     $setupWarning = 'Database setup incomplete: please import client/database.sql.';
