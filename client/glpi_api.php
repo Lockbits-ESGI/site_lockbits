@@ -622,12 +622,10 @@ function glpi_list_user_tickets_v2(int $glpiUserId, array $knownGlpiTicketIds = 
 {
     $summaries = [];
     $knownSet = [];
-    $maxKnownId = 0;
     foreach ($knownGlpiTicketIds as $id) {
         $id = (int) $id;
         if ($id > 0) {
             $knownSet[$id] = true;
-            $maxKnownId = max($maxKnownId, $id);
         }
     }
 
@@ -647,10 +645,10 @@ function glpi_list_user_tickets_v2(int $glpiUserId, array $knownGlpiTicketIds = 
         // ignore
     }
 
-    // One list request, then full detail only for recent tickets (team is not in list payload).
+    // GLPI returns oldest tickets first by default — use sort=id:desc for the newest ones.
     $allIds = [];
     try {
-        $data = glpi_call('GET', '/Assistance/Ticket?limit=100');
+        $data = glpi_call('GET', '/Assistance/Ticket?limit=100&sort=id:desc');
         foreach (glpi_normalize_list($data) as $item) {
             if (!is_array($item)) {
                 continue;
@@ -667,22 +665,13 @@ function glpi_list_user_tickets_v2(int $glpiUserId, array $knownGlpiTicketIds = 
 
     krsort($allIds, SORT_NUMERIC);
 
-    // New tickets since last sync + 8 most recent (team assignments on recent tickets).
-    $candidates = [];
-    $recentCount = 0;
-    foreach ($allIds as $ticketId => $listItem) {
-        if ($ticketId > $maxKnownId) {
-            $candidates[$ticketId] = $listItem;
-        }
-        if ($recentCount < 8) {
-            $candidates[$ticketId] = $listItem;
-            $recentCount++;
-        }
-    }
+    // Scan every ticket returned by GLPI (up to 100). MiniEDR floods the queue so
+    // "8 most recent" misses manual assignments on slightly older tickets.
+    $candidates = $allIds;
 
     $needFullFetch = [];
     foreach ($candidates as $ticketId => $listItem) {
-        if (isset($summaries[$ticketId]) || isset($knownSet[$ticketId])) {
+        if (isset($summaries[$ticketId])) {
             continue;
         }
         $ticket = is_array($listItem) ? $listItem : [];
@@ -691,6 +680,10 @@ function glpi_list_user_tickets_v2(int $glpiUserId, array $knownGlpiTicketIds = 
             if ($summary !== null) {
                 $summaries[$summary['glpi_ticket_id']] = $summary;
             }
+            continue;
+        }
+        // Already imported locally — skip full fetch unless we need a status refresh later.
+        if (isset($knownSet[$ticketId])) {
             continue;
         }
         $needFullFetch[] = $ticketId;

@@ -14,6 +14,19 @@ $tickets = [];
 $setupWarning = '';
 
 $glpiSyncEnabled = glpi_is_configured();
+$glpiUserLinked = false;
+$glpiUserIdDisplay = 0;
+if ($localUserId > 0) {
+    try {
+        $glpiStmt = db()->prepare('SELECT glpi_user_id FROM users WHERE id = :id LIMIT 1');
+        $glpiStmt->execute(['id' => $localUserId]);
+        $glpiRow = $glpiStmt->fetch();
+        $glpiUserIdDisplay = (int) ($glpiRow['glpi_user_id'] ?? 0);
+        $glpiUserLinked = $glpiUserIdDisplay > 0;
+    } catch (Throwable) {
+        // ignore
+    }
+}
 $forceGlpiSync = isset($_GET['refresh']);
 // Blocking sync only when user explicitly clicks "Actualiser".
 if ($glpiSyncEnabled && $forceGlpiSync) {
@@ -62,6 +75,20 @@ unset($_SESSION['flash_success']);
             </div>
         <?php endif; ?>
 
+        <?php if (!$glpiSyncEnabled): ?>
+            <div class="mb-6 rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                GLPI n'est pas configuré sur ce serveur (variables <code class="text-red-100">GLPI_*</code> manquantes dans le .env Docker).
+                La synchronisation des tickets depuis GLPI est désactivée.
+            </div>
+        <?php elseif (!$glpiUserLinked): ?>
+            <div class="mb-6 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                Votre compte n'est pas lié à GLPI (<code class="text-amber-100">glpi_user_id</code> vide).
+                Réinscrivez-vous ou contactez l'administrateur.
+            </div>
+        <?php else: ?>
+            <p class="mb-4 text-xs text-slate-500">Compte GLPI lié : utilisateur #<?= (int) $glpiUserIdDisplay ?> — assigne le ticket à ce même utilisateur dans GLPI.</p>
+        <?php endif; ?>
+
         <?php if ($setupWarning !== ''): ?>
             <div class="mb-6 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
                 <?= htmlspecialchars($setupWarning, ENT_QUOTES, 'UTF-8') ?>
@@ -108,11 +135,16 @@ unset($_SESSION['flash_success']);
             status.textContent = 'Synchronisation GLPI…';
             status.classList.remove('hidden');
         }
-        // Relative URL (no .php) — avoids HTTPS→HTTP 301 behind reverse proxy (mixed content).
-        fetch('tickets_sync_api', { credentials: 'same-origin' })
+        // Absolute path — relative fetch breaks when URL has no trailing slash (XAMPP).
+        fetch('<?= APP_BASE_PATH ?>/tickets_sync_api', { credentials: 'same-origin' })
             .then(r => r.json())
             .then(data => {
                 if (status) {
+                    if (data && data.configured === false) {
+                        status.textContent = 'GLPI non configuré sur le serveur';
+                        status.classList.remove('hidden');
+                        return;
+                    }
                     status.classList.add('hidden');
                 }
                 if (data && data.reload) {

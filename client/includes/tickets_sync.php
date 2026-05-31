@@ -73,14 +73,16 @@ function tickets_sync_from_glpi(int $localUserId, bool $force = false): array
             return $result;
         }
 
-        tickets_sync_write_cache($localUserId, $glpiUserId, $remoteTickets);
+        if ($remoteTickets !== []) {
+            tickets_sync_write_cache($localUserId, $glpiUserId, $remoteTickets);
 
-        start_secure_session();
-        $_SESSION['glpi_tickets_sync_' . $localUserId] = [
-            'glpi_user_id' => $glpiUserId,
-            'expires_at' => time() + TICKETS_SYNC_TTL,
-            'tickets' => $remoteTickets,
-        ];
+            start_secure_session();
+            $_SESSION['glpi_tickets_sync_' . $localUserId] = [
+                'glpi_user_id' => $glpiUserId,
+                'expires_at' => time() + TICKETS_SYNC_TTL,
+                'tickets' => $remoteTickets,
+            ];
+        }
     }
 
     if ($remoteTickets === []) {
