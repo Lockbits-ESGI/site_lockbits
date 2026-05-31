@@ -108,7 +108,8 @@ unset($_SESSION['flash_success']);
             status.textContent = 'Synchronisation GLPI…';
             status.classList.remove('hidden');
         }
-        fetch('<?= APP_BASE_PATH ?>/tickets_sync_api.php', { credentials: 'same-origin' })
+        // Relative URL (no .php) — avoids HTTPS→HTTP 301 behind reverse proxy (mixed content).
+        fetch('tickets_sync_api', { credentials: 'same-origin' })
             .then(r => r.json())
             .then(data => {
                 if (status) {
@@ -320,7 +321,7 @@ unset($_SESSION['flash_success']);
             lbHistory.push({role:'user', content:msg});
             const dots = lbTyping();
             try {
-                const res  = await fetch('chat_client.php', {
+                const res  = await fetch('chat_client', {
                     method: 'POST',
                     headers: {'Content-Type':'application/json'},
                     body: JSON.stringify({

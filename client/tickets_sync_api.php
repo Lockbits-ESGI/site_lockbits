@@ -18,7 +18,12 @@ $localUserId = (int) ($user['id'] ?? 0);
 $force = isset($_GET['refresh']);
 
 if (!glpi_is_configured()) {
-    echo json_encode(['ok' => true, 'configured' => false, 'reload' => false]);
+    echo json_encode([
+        'ok' => true,
+        'configured' => false,
+        'reload' => false,
+        'error' => 'GLPI not configured (set GLPI_* env vars on the server)',
+    ]);
     exit;
 }
 
