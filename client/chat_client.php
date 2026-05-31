@@ -1,7 +1,14 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../config.php';
+// Lecture de la clé API depuis le .env
+$apiKey = $_ENV['CLAUDE_API_KEY'] ?? getenv('CLAUDE_API_KEY');
+
+if (empty($apiKey)) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Clé API non configurée dans le .env']);
+    exit;
+}
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: POST');
@@ -13,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// ─── Limite quotidienne (partagée avec le chat public) ────────────
+// ─── Limite quotidienne (partagée avec chat.php) ──────────────────
 $counterFile = __DIR__ . '/../usage_count.txt';
 $maxRequests = 100;
 
@@ -47,7 +54,6 @@ if (empty($userMessage)) {
     exit;
 }
 
-// ─── Contexte dynamique selon la page ────────────────────────────
 $pageDescription = match($pageName) {
     'dashboard'     => "Le client consulte son tableau de bord (dashboard).",
     'tickets'       => "Le client consulte la liste de ses tickets de support.",
@@ -76,7 +82,6 @@ Sois concis, professionnel et rassurant.
 - Pour les problèmes techniques urgents, invite à créer un ticket de support
 - Ne donne jamais d'informations confidentielles sur l'infrastructure interne
 - Ne réponds qu'aux sujets liés à LockBits et aux données de l'espace client";
-// ─────────────────────────────────────────────────────────────────
 
 $messages = [];
 foreach ($history as $msg) {
@@ -100,7 +105,7 @@ curl_setopt_array($ch, [
     CURLOPT_POSTFIELDS     => json_encode($payload),
     CURLOPT_HTTPHEADER     => [
         'Content-Type: application/json',
-        'x-api-key: ' . CLAUDE_API_KEY,
+        'x-api-key: ' . $apiKey,
         'anthropic-version: 2023-06-01',
     ],
 ]);

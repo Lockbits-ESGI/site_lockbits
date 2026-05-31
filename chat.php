@@ -1,5 +1,12 @@
 <?php
-require_once 'config.php';
+// Lecture de la clé API depuis le .env
+$apiKey = $_ENV['CLAUDE_API_KEY'] ?? getenv('CLAUDE_API_KEY');
+
+if (empty($apiKey)) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Clé API non configurée dans le .env']);
+    exit;
+}
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -14,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // ─── Limite quotidienne ───────────────────────────────────────────
 $counterFile = __DIR__ . '/usage_count.txt';
-$maxRequests = 100; // max requêtes par jour
+$maxRequests = 100;
 
 $data = file_exists($counterFile)
     ? json_decode(file_get_contents($counterFile), true)
@@ -44,7 +51,6 @@ if (empty($userMessage)) {
     exit;
 }
 
-// ─── Contexte entreprise ─────────────────────────────────────────
 $systemPrompt = "Tu es l'assistant virtuel de LockBits, une entreprise spécialisée dans l'hébergement sécurisé et la cybersécurité. Réponds toujours en français sauf si le client s'adresse à toi en anglais.
 
 === INFORMATIONS SUR L'ENTREPRISE ===
@@ -67,7 +73,6 @@ $systemPrompt = "Tu es l'assistant virtuel de LockBits, une entreprise spéciali
 - Pour les questions techniques complexes ou les devis, invite le client à contacter l'équipe
 - Ne réponds qu'aux questions concernant LockBits et la cybersécurité
 - Ne donne jamais d'informations confidentielles sur l'infrastructure interne";
-// ─────────────────────────────────────────────────────────────────
 
 $messages = [];
 foreach ($history as $msg) {
@@ -91,7 +96,7 @@ curl_setopt_array($ch, [
     CURLOPT_POSTFIELDS     => json_encode($payload),
     CURLOPT_HTTPHEADER     => [
         'Content-Type: application/json',
-        'x-api-key: ' . CLAUDE_API_KEY,
+        'x-api-key: ' . $apiKey,
         'anthropic-version: 2023-06-01',
     ],
 ]);
