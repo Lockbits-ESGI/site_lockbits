@@ -41,6 +41,10 @@ define('APP_ENV', getenv('APP_ENV') ?: 'development');
 // Base path of this client area in your web server (examples: "/client", "/site_lockbits/client", "").
 define('APP_BASE_PATH', rtrim((string) (getenv('APP_BASE_PATH') ?: '/client'), '/'));
 
+// EDR Agent
+define('EDR_SERVER_URL', (string) (getenv('EDR_SERVER_URL') ?: ''));
+define('EDR_AUTH_TOKEN', (string) (getenv('EDR_AUTH_TOKEN') ?: ''));
+
 // GLPI (REST API + UI redirect)
 // Example:
 //  - GLPI_API_URL=https://glpi.example.com/apirest.php
