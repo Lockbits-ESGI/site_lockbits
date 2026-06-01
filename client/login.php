@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/includes/ratelimit.php';
+check_rate_limit('login', 10, 1);
 
 if (is_logged_in()) {
     redirect('/dashboard');

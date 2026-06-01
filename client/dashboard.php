@@ -343,7 +343,7 @@ try {
             lbHistory.push({role:'user', content:msg});
             const dots = lbTyping();
             try {
-                const res  = await fetch('chat_client', {
+                const res  = await fetch('chat_client.php', {
                     method: 'POST',
                     headers: {'Content-Type':'application/json'},
                     body: JSON.stringify({

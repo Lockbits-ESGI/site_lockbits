@@ -31,3 +31,4 @@ cache/
 *.tar
 *.gz
 
+usage_count.txt
