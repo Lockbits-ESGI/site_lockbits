@@ -2,9 +2,9 @@ name: Container Build and Push
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: ["main", "master", "Synchro_Ticket"]
   pull_request:
-    branches: ["main", "master"]
+    branches: ["main", "master", "Synchro_Ticket"]
 
 env:
   REGISTRY: ghcr.io

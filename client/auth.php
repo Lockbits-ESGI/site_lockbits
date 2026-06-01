@@ -12,7 +12,7 @@ function start_secure_session(): void
     session_set_cookie_params([
         'httponly' => true,
         'samesite' => 'Lax',
-        'secure' => false,
+        'secure' => app_is_https(),
     ]);
 
     session_start();

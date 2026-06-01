@@ -6,6 +6,7 @@ require_once __DIR__ . '/db.php';
 
 require_login();
 $user = current_user();
+$localUserId = (int) ($user['id'] ?? 0);
 
 $ticketCount = 0;
 $setupWarning = '';
@@ -16,7 +17,9 @@ $flashTicketUrl = (string) ($_SESSION['flash_ticket_url'] ?? '');
 unset($_SESSION['flash_success'], $_SESSION['flash_ticket_url']);
 
 try {
-    $ticketCount = (int) db()->query('SELECT COUNT(*) FROM tickets')->fetchColumn();
+    $stmt = db()->prepare('SELECT COUNT(*) FROM tickets WHERE user_id = :uid');
+    $stmt->execute(['uid' => $localUserId]);
+    $ticketCount = (int) $stmt->fetchColumn();
 } catch (PDOException $e) {
     // Keep dashboard accessible even if SQL import is incomplete.
     $setupWarning = 'Database setup incomplete: please import client/database.sql.';
@@ -114,6 +117,30 @@ try {
             </article>
         </section>
     </main>
+
+    <?php if (defined('EDR_SERVER_URL') && EDR_SERVER_URL !== ''): ?>
+    <section class="mx-auto mt-8 max-w-7xl px-6">
+        <article class="rounded-2xl border border-emerald-400/30 bg-slate-900/60 p-6">
+            <h2 class="text-lg font-semibold text-white">🔒 EDR Agents</h2>
+            <p class="mt-2 text-sm text-slate-400">Installez l'agent de sécurité sur vos machines :</p>
+            <div class="mt-4 rounded-xl bg-slate-950 p-4" style="position:relative;">
+                <pre class="overflow-x-auto text-sm text-emerald-300" id="edr-install-command"><code>curl -fsSL https://raw.githubusercontent.com/Lockbits-ESGI/main/main/install-agent.sh | \
+  SERVER_URL=<?= htmlspecialchars(EDR_SERVER_URL, ENT_QUOTES, 'UTF-8') ?> AUTH_TOKEN=<?= htmlspecialchars(EDR_AUTH_TOKEN, ENT_QUOTES, 'UTF-8') ?> bash</code></pre>
+                <button onclick="copyEdrCommand()" id="edr-copy-btn" class="mt-3 rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-300">
+                    Copier
+                </button>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">Exécutez cette commande sur la machine à protéger.</p>
+        </article>
+    </section>
+    <?php else: ?>
+    <section class="mx-auto mt-8 max-w-7xl px-6">
+        <article class="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
+            <h2 class="text-lg font-semibold text-white">🔒 EDR Agents</h2>
+            <p class="mt-2 text-sm text-slate-400">Contactez le support pour configurer votre agent EDR.</p>
+        </article>
+    </section>
+    <?php endif; ?>
 
 </html>
 
@@ -343,6 +370,17 @@ try {
             this.style.height='auto';
             this.style.height=Math.min(this.scrollHeight,90)+'px';
         });
+
+        function copyEdrCommand() {
+            const pre = document.getElementById('edr-install-command');
+            if (!pre) return;
+            const code = pre.querySelector('code');
+            if (!code) return;
+            navigator.clipboard.writeText(code.textContent.trim()).then(() => {
+                const btn = document.getElementById('edr-copy-btn');
+                if (btn) { btn.textContent = 'Copié \u2713'; setTimeout(() => { btn.textContent = 'Copier'; }, 2000); }
+            });
+        }
     </script>
 </body>
 </html>

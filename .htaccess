@@ -1,5 +1,8 @@
 RewriteEngine On
 
+# Trust HTTPS when behind a reverse proxy (preprod/prod)
+SetEnvIf X-Forwarded-Proto "https" HTTPS=on
+
 # -----------------------------------------------------------
 # Clean URLs — masquer les extensions .php
 # -----------------------------------------------------------

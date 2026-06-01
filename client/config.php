@@ -38,8 +38,51 @@ define('DB_PASS', $dbPass);
 // Application settings
 define('APP_NAME', getenv('APP_NAME') ?: 'LockBits Client Area');
 define('APP_ENV', getenv('APP_ENV') ?: 'development');
-// Base path of this client area in your web server (examples: "/client", "/site_lockbits/client", "").
-define('APP_BASE_PATH', rtrim((string) (getenv('APP_BASE_PATH') ?: '/client'), '/'));
+
+/**
+ * Normalize APP_BASE_PATH to a path only (never a full http(s) URL).
+ */
+function app_normalize_base_path(string $raw): string
+{
+    $raw = trim($raw);
+    if ($raw === '') {
+        return '/client';
+    }
+
+    if (preg_match('#^https?://#i', $raw) === 1) {
+        $parts = parse_url($raw);
+        $raw = (string) ($parts['path'] ?? '/client');
+    }
+
+    $raw = '/' . trim($raw, '/');
+    return $raw === '/' ? '' : $raw;
+}
+
+define('APP_BASE_PATH', app_normalize_base_path((string) (getenv('APP_BASE_PATH') ?: '/client')));
+
+/** True when the request is served over HTTPS (direct or via reverse proxy). */
+function app_is_https(): bool
+{
+    if (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') {
+        return true;
+    }
+
+    $forwarded = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+    if ($forwarded === 'https') {
+        return true;
+    }
+
+    $forwardedSsl = (string) ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '');
+    if ($forwardedSsl === 'on') {
+        return true;
+    }
+
+    return (string) (getenv('APP_FORCE_HTTPS') ?: '') === '1';
+}
+
+// EDR Agent
+define('EDR_SERVER_URL', (string) (getenv('EDR_SERVER_URL') ?: ''));
+define('EDR_AUTH_TOKEN', (string) (getenv('EDR_AUTH_TOKEN') ?: ''));
 
 // GLPI (REST API + UI redirect)
 // Example:

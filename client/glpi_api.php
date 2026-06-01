@@ -404,6 +404,448 @@ function glpi_ticket_url(int $ticketId): string
 }
 
 /**
+ * Parse GLPI legacy search API response rows.
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function glpi_parse_search_rows(mixed $data): array
+{
+    if (!is_array($data)) {
+        return [];
+    }
+
+    $rows = $data['data'] ?? $data;
+    if (!is_array($rows)) {
+        return [];
+    }
+
+    $out = [];
+    foreach ($rows as $row) {
+        if (is_array($row)) {
+            $out[] = $row;
+        }
+    }
+
+    return $out;
+}
+
+/**
+ * Run a legacy search (apirest.php) and return raw rows.
+ *
+ * @param array<int, array<string, mixed>> $criteria
+ * @return array<int, array<string, mixed>>
+ */
+function glpi_legacy_search(string $itemtype, array $criteria, array $forcedisplay = []): array
+{
+    $query = [];
+    foreach ($criteria as $i => $c) {
+        foreach ($c as $key => $value) {
+            $query['criteria[' . $i . '][' . $key . ']'] = $value;
+        }
+    }
+    foreach ($forcedisplay as $i => $fieldId) {
+        $query['forcedisplay[' . $i . ']'] = $fieldId;
+    }
+
+    $path = '/search/' . $itemtype;
+    if ($query !== []) {
+        $path .= '?' . http_build_query($query);
+    }
+
+    $data = glpi_call('GET', $path);
+    return glpi_parse_search_rows($data);
+}
+
+/**
+ * Extract ticket IDs from Ticket_User search rows (field keys vary by GLPI version).
+ *
+ * @param array<int, array<string, mixed>> $rows
+ * @return array<int, int>
+ */
+function glpi_extract_ticket_ids_from_ticket_user_rows(array $rows): array
+{
+    $ids = [];
+    foreach ($rows as $row) {
+        if (isset($row['tickets_id']) && is_numeric($row['tickets_id'])) {
+            $ids[(int) $row['tickets_id']] = (int) $row['tickets_id'];
+            continue;
+        }
+        foreach ($row as $key => $value) {
+            if (is_string($key) && str_contains(strtolower($key), 'ticket') && is_numeric($value)) {
+                $ids[(int) $value] = (int) $value;
+            }
+        }
+        // Legacy search often returns numeric field ids (e.g. "2" => tickets_id).
+        if (isset($row['2']) && is_numeric($row['2'])) {
+            $ids[(int) $row['2']] = (int) $row['2'];
+        }
+    }
+
+    return array_values($ids);
+}
+
+/**
+ * Normalize a GLPI ticket payload for local storage.
+ *
+ * @param array<string, mixed> $ticket
+ * @return array{glpi_ticket_id:int, subject:string, status:string, created_at:string}|null
+ */
+function glpi_normalize_ticket_summary(array $ticket): ?array
+{
+    $id = (int) ($ticket['id'] ?? 0);
+    if ($id <= 0) {
+        return null;
+    }
+
+    $subject = trim((string) ($ticket['name'] ?? $ticket['title'] ?? ''));
+    if ($subject === '') {
+        $subject = 'Ticket #' . $id;
+    }
+
+    $rawDate = (string) ($ticket['date_creation'] ?? $ticket['date'] ?? $ticket['created_at'] ?? '');
+    $createdAt = gmdate('Y-m-d H:i:s');
+    if ($rawDate !== '') {
+        try {
+            $dt = new DateTimeImmutable($rawDate);
+            $createdAt = $dt->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        } catch (Throwable) {
+            // keep fallback
+        }
+    }
+
+    return [
+        'glpi_ticket_id' => $id,
+        'subject' => $subject,
+        'status' => glpi_map_ticket_status_to_local($ticket['status'] ?? null),
+        'created_at' => $createdAt,
+    ];
+}
+
+/**
+ * List tickets linked to a GLPI user (requester, observer, or assigned).
+ *
+ * @return array<int, array{glpi_ticket_id:int, subject:string, status:string, created_at:string}>
+ */
+function glpi_list_user_tickets(int $glpiUserId, array $knownGlpiTicketIds = []): array
+{
+    if ($glpiUserId <= 0) {
+        return [];
+    }
+
+    if (str_contains(GLPI_API_URL, 'apirest.php')) {
+        $ticketIds = glpi_list_user_ticket_ids_legacy($glpiUserId);
+        $ticketIds = array_values(array_unique(array_filter($ticketIds, static fn(int $id): bool => $id > 0)));
+        if ($ticketIds === []) {
+            return [];
+        }
+
+        $summaries = [];
+        foreach ($ticketIds as $ticketId) {
+            try {
+                $ticket = glpi_get_ticket($ticketId);
+                $summary = glpi_normalize_ticket_summary($ticket);
+                if ($summary !== null) {
+                    $summaries[$summary['glpi_ticket_id']] = $summary;
+                }
+            } catch (Throwable $e) {
+                error_log('[glpi_list_user_tickets] ticket=' . $ticketId . ' ' . $e->getMessage());
+            }
+        }
+
+        return array_values($summaries);
+    }
+
+    return glpi_list_user_tickets_v2($glpiUserId, $knownGlpiTicketIds);
+}
+
+/**
+ * @return array<int, int>
+ */
+function glpi_list_user_ticket_ids_legacy(int $glpiUserId): array
+{
+    $ids = [];
+
+    // Ticket_User.users_id field id varies (2 or 5) depending on GLPI version.
+    foreach ([5, 2, 3] as $usersFieldId) {
+        try {
+            $rows = glpi_legacy_search('Ticket_User', [
+                [
+                    'field' => $usersFieldId,
+                    'searchtype' => 'equals',
+                    'value' => $glpiUserId,
+                ],
+            ], [2]);
+            $found = glpi_extract_ticket_ids_from_ticket_user_rows($rows);
+            foreach ($found as $id) {
+                $ids[$id] = $id;
+            }
+            if ($found !== []) {
+                break;
+            }
+        } catch (Throwable) {
+            // try next field id
+        }
+    }
+
+    // Also search tickets where user is requester (field 4 = requester in many GLPI versions).
+    foreach ([4, 5] as $requesterFieldId) {
+        try {
+            $rows = glpi_legacy_search('Ticket', [
+                [
+                    'field' => $requesterFieldId,
+                    'searchtype' => 'equals',
+                    'value' => $glpiUserId,
+                ],
+            ], [2]);
+            foreach ($rows as $row) {
+                if (isset($row['2']) && is_numeric($row['2'])) {
+                    $ids[(int) $row['2']] = (int) $row['2'];
+                }
+                if (isset($row['id']) && is_numeric($row['id'])) {
+                    $ids[(int) $row['id']] = (int) $row['id'];
+                }
+            }
+        } catch (Throwable) {
+            // try next field id
+        }
+    }
+
+    return array_values($ids);
+}
+
+/**
+ * GLPI v2: list tickets for a user. EDR/staff often add clients via `team`, not `user_recipient`.
+ *
+ * @return array<int, array{glpi_ticket_id:int, subject:string, status:string, created_at:string}>
+ */
+function glpi_list_user_tickets_v2(int $glpiUserId, array $knownGlpiTicketIds = []): array
+{
+    $summaries = [];
+    $knownSet = [];
+    foreach ($knownGlpiTicketIds as $id) {
+        $id = (int) $id;
+        if ($id > 0) {
+            $knownSet[$id] = true;
+        }
+    }
+
+    try {
+        $path = '/Assistance/Ticket?filter=' . rawurlencode('user_recipient.id==' . $glpiUserId) . '&limit=50';
+        $data = glpi_call('GET', $path);
+        foreach (glpi_normalize_list($data) as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $summary = glpi_normalize_ticket_summary($item);
+            if ($summary !== null) {
+                $summaries[$summary['glpi_ticket_id']] = $summary;
+            }
+        }
+    } catch (Throwable) {
+        // ignore
+    }
+
+    // GLPI returns oldest tickets first by default — use sort=id:desc for the newest ones.
+    $allIds = [];
+    try {
+        $data = glpi_call('GET', '/Assistance/Ticket?limit=100&sort=id:desc');
+        foreach (glpi_normalize_list($data) as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $ticketId = (int) ($item['id'] ?? 0);
+            if ($ticketId > 0) {
+                $allIds[$ticketId] = $item;
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('[glpi_list_user_tickets_v2] list ' . $e->getMessage());
+        return array_values($summaries);
+    }
+
+    krsort($allIds, SORT_NUMERIC);
+
+    // Scan every ticket returned by GLPI (up to 100). MiniEDR floods the queue so
+    // "8 most recent" misses manual assignments on slightly older tickets.
+    $candidates = $allIds;
+
+    $needFullFetch = [];
+    foreach ($candidates as $ticketId => $listItem) {
+        if (isset($summaries[$ticketId])) {
+            continue;
+        }
+        $ticket = is_array($listItem) ? $listItem : [];
+        if (glpi_ticket_involves_user($ticket, $glpiUserId)) {
+            $summary = glpi_normalize_ticket_summary($ticket);
+            if ($summary !== null) {
+                $summaries[$summary['glpi_ticket_id']] = $summary;
+            }
+            continue;
+        }
+        // Already imported locally — skip full fetch unless we need a status refresh later.
+        if (isset($knownSet[$ticketId])) {
+            continue;
+        }
+        $needFullFetch[] = $ticketId;
+    }
+
+    if ($needFullFetch !== []) {
+        foreach (glpi_get_tickets_parallel($needFullFetch) as $ticketId => $ticket) {
+            if (!glpi_ticket_involves_user($ticket, $glpiUserId)) {
+                continue;
+            }
+            $summary = glpi_normalize_ticket_summary($ticket);
+            if ($summary !== null) {
+                $summaries[$summary['glpi_ticket_id']] = $summary;
+            }
+        }
+    }
+
+    return array_values($summaries);
+}
+
+/**
+ * Fetch multiple tickets in parallel (GLPI v2 only).
+ *
+ * @param array<int, int> $ticketIds
+ * @return array<int, array<string, mixed>>
+ */
+function glpi_get_tickets_parallel(array $ticketIds): array
+{
+    if ($ticketIds === [] || !str_contains(GLPI_API_URL, 'api.php')) {
+        return [];
+    }
+
+    $ticketIds = array_values(array_unique(array_filter(array_map('intval', $ticketIds), static fn(int $id): bool => $id > 0)));
+    if ($ticketIds === []) {
+        return [];
+    }
+
+    $token = glpi_v2_access_token();
+    $baseUrl = rtrim(GLPI_API_URL, '/') . '/Assistance/Ticket/';
+    $mh = curl_multi_init();
+    if ($mh === false) {
+        return [];
+    }
+
+    $handles = [];
+    foreach ($ticketIds as $id) {
+        $ch = curl_init($baseUrl . $id);
+        if ($ch === false) {
+            continue;
+        }
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+                'Authorization: Bearer ' . $token,
+            ],
+            CURLOPT_TIMEOUT => 8,
+        ]);
+        curl_multi_add_handle($mh, $ch);
+        $handles[$id] = $ch;
+    }
+
+    do {
+        $status = curl_multi_exec($mh, $running);
+        if ($running > 0) {
+            curl_multi_select($mh, 0.4);
+        }
+    } while ($running > 0 && $status === CURLM_OK);
+
+    $results = [];
+    foreach ($handles as $id => $ch) {
+        $raw = curl_multi_getcontent($ch);
+        $httpStatus = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        curl_multi_remove_handle($mh, $ch);
+        curl_close($ch);
+
+        if ($httpStatus < 200 || $httpStatus >= 300 || $raw === false || $raw === '') {
+            continue;
+        }
+
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) {
+            $results[$id] = $decoded;
+        }
+    }
+
+    curl_multi_close($mh);
+
+    return $results;
+}
+
+/**
+ * Check if a GLPI v2 ticket involves the given user (requester, observer, assignee).
+ *
+ * @param array<string, mixed> $ticket
+ */
+function glpi_ticket_involves_user(array $ticket, int $glpiUserId): bool
+{
+    if ($glpiUserId <= 0) {
+        return false;
+    }
+
+    $matchesId = static function (mixed $node) use ($glpiUserId): bool {
+        if (!is_array($node)) {
+            return is_numeric($node) && (int) $node === $glpiUserId;
+        }
+        if (isset($node['id']) && (int) $node['id'] === $glpiUserId) {
+            return true;
+        }
+        if (isset($node['users_id']) && (int) $node['users_id'] === $glpiUserId) {
+            return true;
+        }
+        return false;
+    };
+
+    if ($matchesId($ticket['user_recipient'] ?? null)) {
+        return true;
+    }
+
+    $actors = $ticket['actors'] ?? null;
+    if (is_array($actors)) {
+        foreach (['requesters', 'assignees', 'observers', 'requester', 'assignee', 'observer'] as $key) {
+            if (!isset($actors[$key])) {
+                continue;
+            }
+            $group = $actors[$key];
+            if ($matchesId($group)) {
+                return true;
+            }
+            if (is_array($group)) {
+                foreach ($group as $entry) {
+                    if ($matchesId($entry)) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    foreach (['users_id_recipient', '_users_id_requester', 'users_id_requester'] as $key) {
+        if (isset($ticket[$key]) && (int) $ticket[$key] === $glpiUserId) {
+            return true;
+        }
+    }
+
+    // GLPI v2 full ticket: actors assigned via UI/EDR appear in `team`.
+    $team = $ticket['team'] ?? null;
+    if (is_array($team)) {
+        foreach ($team as $member) {
+            if (!is_array($member)) {
+                continue;
+            }
+            if ((int) ($member['id'] ?? 0) === $glpiUserId) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
  * Fetch followups/messages of a ticket.
  *
  * Tries a few known high-level API paths to stay compatible across GLPI versions/config.
