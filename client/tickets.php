@@ -580,7 +580,7 @@ unset($_SESSION['flash_success']);
             lbHistory.push({role:'user', content:msg});
             const dots = lbTyping();
             try {
-                const res  = await fetch('chat_client.php', {
+                const res  = await fetch('chat_client', {
                     method: 'POST',
                     headers: {'Content-Type':'application/json'},
                     body: JSON.stringify({
