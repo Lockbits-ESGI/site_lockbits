@@ -20,6 +20,8 @@ services:
       APP_NAME: ${APP_NAME:-LockBits Client Area}
       APP_ENV: ${APP_ENV:-development}
       APP_BASE_PATH: ${APP_BASE_PATH:-/client}
+      # Chatbot
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
       # GLPI integration (REST API + UI redirect)
       GLPI_API_URL: ${GLPI_API_URL:-}
       GLPI_WEB_URL: ${GLPI_WEB_URL:-}
