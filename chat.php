@@ -83,7 +83,7 @@ foreach ($history as $msg) {
 $messages[] = ['role' => 'user', 'content' => $userMessage];
 
 $payload = [
-    'model'      => 'claude-sonnet-4-20250514',
+    'model'      => 'claude-sonnet-4-6',
     'max_tokens' => 500,
     'system'     => $systemPrompt,
     'messages'   => $messages,
