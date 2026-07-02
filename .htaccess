@@ -1,5 +1,8 @@
 RewriteEngine On
 
+# Exclure /metrics des règles de réécriture (sécurité)
+RewriteRule ^metrics$ - [L]
+
 # Trust HTTPS when behind a reverse proxy (preprod/prod)
 SetEnvIf X-Forwarded-Proto "https" HTTPS=on
 
