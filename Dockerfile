@@ -35,6 +35,9 @@ WORKDIR /var/www/html
 # Copy application files to container
 COPY . /var/www/html/
 
+# Store build timestamp for uptime tracking
+RUN date +%s > /var/www/html/.lockbits_start
+
 # Set proper permissions for Apache
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
