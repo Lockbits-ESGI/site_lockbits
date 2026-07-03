@@ -1,7 +1,8 @@
 RewriteEngine On
 
-# Exclure /metrics des règles de réécriture (sécurité)
-RewriteRule ^metrics$ - [L]
+# Route /metrics → metrics.php (endpoint Prometheus)
+# Doit être AVANT les règles client pour éviter la redirection 301
+RewriteRule ^metrics$ metrics.php [L]
 
 # Trust HTTPS when behind a reverse proxy (preprod/prod)
 SetEnvIf X-Forwarded-Proto "https" HTTPS=on
